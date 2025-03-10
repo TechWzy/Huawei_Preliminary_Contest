@@ -1,5 +1,5 @@
 # Huawei_Preliminary_Contest
-To manage the project of the 2025 Huawei Software Elite Challenge in the preliminary contest
+To manage the project of the 2025 Huawei Software Elite Challenge in the preliminary contest.
 
 ## 相关运行操作
 
