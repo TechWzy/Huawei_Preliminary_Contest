@@ -40,3 +40,6 @@ python ./resources/run.py ./resources/interactor.exe ./data/sample_practice.in .
 resources\code_craft_2025.exe
 
 ```
+
+
+**注意，debug 和 replay文件将存储于当前目录下.**
