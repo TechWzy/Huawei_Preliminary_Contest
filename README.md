@@ -30,13 +30,13 @@ python ./resources/run.py ./resources/interactor.exe ./data/sample_practice.in .
 当你位于 /Huawei_Preliminary_Contest/resources 路径下，请执行
 python run.py interactor.exe ../data/sample_practice.in ../code/main.exe -r ..
 
-**启动图形化界面**
+启动图形化界面
 code_craft_2025.exe
 
 当你位于 /Huawei_Preliminary_Contest 路径下，请执行
 python ./resources/run.py ./resources/interactor.exe ./data/sample_practice.in ./code/main.exe -r ...
 
-**启动图形化界面**
+启动图形化界面
 resources\code_craft_2025.exe
 
 ```
