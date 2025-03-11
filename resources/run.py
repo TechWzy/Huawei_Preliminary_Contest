@@ -7,7 +7,6 @@ import time
 DEBUG_LEN = 2
 REPLAY_LEN = 10
 
-
 def convert(arr, name, length):
     if arr is None:
         name = ""
