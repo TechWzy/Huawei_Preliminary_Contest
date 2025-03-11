@@ -2,7 +2,13 @@ code/out
 .vs
 .vscode
 
+.idea
 code/code_craft.exe
 code/code_craft.ilk
 code/code_craft.pdb
 replay
+.idea
+code/code_craft.exe
+code/code_craft.ilk
+code/code_craft.pdb
+resources/result.txt
