@@ -226,8 +226,8 @@ int main()
 
     for (int t = 1; t <= T + EXTRA_TIME; t++) {
         timestamp_action();
-        delete_action();
-        write_action();
+        delete_action();    
+        write_action();     
         read_action();
     }
     clean();

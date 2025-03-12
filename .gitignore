@@ -1,9 +1,16 @@
 code/out
 .vs
+.vscode
+
 .idea
 code/code_craft.exe
 code/code_craft.ilk
 code/code_craft.pdb
-华为软挑初赛
+replay
+.idea
+code/code_craft.exe
+code/code_craft.ilk
+code/code_craft.pdb
 resources
 resources/log/code_craft.log
+resources/result.txt
