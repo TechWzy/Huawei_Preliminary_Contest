@@ -7,5 +7,5 @@ public:
 	int id;
 	int size;
 	int tag;
-	int replica[];
+	int replica[REP_NUM];
 };

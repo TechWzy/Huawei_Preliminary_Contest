@@ -1,24 +1,18 @@
 #include "utils.h"
-typedef struct Request_ {
-    int object_id;
-    int prev_id;
-    bool is_done;
-} Request;
+#include "Block.h"
+#include "Disk.h"
+#include "Unit.h"
+#include "Request.h"
+#include "Object.h"
 
-typedef struct Object_ {
-    int replica[REP_NUM + 1];
-    int* unit[REP_NUM + 1];
-    int size;
-    int last_request_point;
-    bool is_delete;
-} Object;
 
 Request request[MAX_REQUEST_NUM];
 Object object[MAX_OBJECT_NUM];
+Block block[MAX_OBJECT_NUM * (MAX_OBJECT_SIZE - 1) + 1];
+Disk disk[MAX_DISK_NUM];
+Unit unit[(MAX_DISK_NUM - 1) * (MAX_DISK_SIZE - 1) + 1];
 
-int T, M, N, V, G;
-int disk[MAX_DISK_NUM][MAX_DISK_SIZE];
-int disk_point[MAX_DISK_NUM];
+
 
 void timestamp_action()
 {

@@ -1,11 +1,7 @@
 #pragma once
 #pragma GCC optimize("O2")
-#include<bits/stdc++.h>
-#include "Block.h"
-#include "Disk.h"
-#include "Unit.h"
-#include "Request.h"
-#include "Object.h"
+#include <bits/stdc++.h>
+
 
 
 #define MAX_DISK_NUM (10 + 1)
@@ -26,9 +22,5 @@ int global_state[3 * MAX_TAG_NUM][MAX_REQUEST_NUM / FRE_PER_SLICING + 10];
 // 为对象块分配ID用的计数器
 int cnt = 0;
 
-Request request[MAX_REQUEST_NUM];
-Object object[MAX_OBJECT_NUM];
-Block block[MAX_OBJECT_NUM * (MAX_OBJECT_SIZE - 1) + 1];
-Disk disk[MAX_DISK_NUM];
-Unit unit[(MAX_DISK_NUM - 1) * (MAX_DISK_SIZE - 1) + 1];
+
 
