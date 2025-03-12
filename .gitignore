@@ -5,4 +5,5 @@ code/code_craft.exe
 code/code_craft.ilk
 code/code_craft.pdb
 华为软挑初赛
-resources/result.txt
+resources
+resources/log/code_craft.log

@@ -1,15 +1,4 @@
-#include <cstdio>
-#include <cassert>
-#include <cstdlib>
-
-#define MAX_DISK_NUM (10 + 1)
-#define MAX_DISK_SIZE (16384 + 1)
-#define MAX_REQUEST_NUM (30000000 + 1)
-#define MAX_OBJECT_NUM (100000 + 1)
-#define REP_NUM (3)
-#define FRE_PER_SLICING (1800)
-#define EXTRA_TIME (105)
-
+#include "utils.h"
 typedef struct Request_ {
     int object_id;
     int prev_id;
@@ -156,17 +145,20 @@ void read_action()
             printf("#\n");
         }
         printf("0\n");
-    } else {
+    }
+    else {
         current_phase++;
         object_id = request[current_request].object_id;
         for (int i = 1; i <= N; i++) {
             if (i == object[object_id].replica[1]) {
                 if (current_phase % 2 == 1) {
                     printf("j %d\n", object[object_id].unit[1][current_phase / 2 + 1]);
-                } else {
+                }
+                else {
                     printf("r#\n");
                 }
-            } else {
+            }
+            else {
                 printf("#\n");
             }
         }
@@ -174,13 +166,15 @@ void read_action()
         if (current_phase == object[object_id].size * 2) {
             if (object[object_id].is_delete) {
                 printf("0\n");
-            } else {
+            }
+            else {
                 printf("1\n%d\n", current_request);
                 request[current_request].is_done = true;
             }
             current_request = 0;
             current_phase = 0;
-        } else {
+        }
+        else {
             printf("0\n");
         }
     }
@@ -199,6 +193,7 @@ void clean()
         }
     }
 }
+
 
 int main()
 {
