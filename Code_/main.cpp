@@ -1,35 +1,11 @@
-#include <cstdio>
-#include <cassert>
-#include <cstdlib>
-
-#define MAX_DISK_NUM (10 + 1)
-#define MAX_DISK_SIZE (16384 + 1)
-#define MAX_REQUEST_NUM (30000000 + 1)
-#define MAX_OBJECT_NUM (100000 + 1)
-#define REP_NUM (3)
-#define FRE_PER_SLICING (1800)
-#define EXTRA_TIME (105)
-
-typedef struct Request_ {
-    int object_id;
-    int prev_id;
-    bool is_done;
-} Request;
-
-typedef struct Object_ {
-    int replica[REP_NUM + 1];
-    int* unit[REP_NUM + 1];
-    int size;
-    int last_request_point;
-    bool is_delete;
-} Object;
+#include "utils.h"
+#include "Disk.h"
+#include "Request.h"
+#include "Object.h"
 
 Request request[MAX_REQUEST_NUM];
 Object object[MAX_OBJECT_NUM];
-
-int T, M, N, V, G;
-int disk[MAX_DISK_NUM][MAX_DISK_SIZE];
-int disk_point[MAX_DISK_NUM];
+Disk disk[MAX_DISK_NUM];
 
 void timestamp_action()
 {
@@ -49,46 +25,47 @@ void do_object_delete(const int* object_unit, int* disk_unit, int size)
 
 void delete_action()
 {
-    int n_delete;
+    int n;
     int abort_num = 0;
-    static int _id[MAX_OBJECT_NUM];
+    
+    scanf("%d", &n);
+    vector<int>_id(n);
 
-    scanf("%d", &n_delete);
-    for (int i = 1; i <= n_delete; i++) {
+    for(int i = 0;i < n;i++){
         scanf("%d", &_id[i]);
     }
 
-    for (int i = 1; i <= n_delete; i++) {
-        int id = _id[i];
-        int current_id = object[id].last_request_point;
-        while (current_id != 0) {
-            if (request[current_id].is_done == false) {
-                abort_num++;
+    //  取消请求.
+    vector<int>del;
+    for(int i = 0;i < n;i++){
+        auto& obj = object[_id[i]];
+        obj.is_deleted = true;
+        auto dl = obj.clean();
+        for(const auto& rid : dl) {
+            auto res = request[rid].del();  //  删除 rid
+            if(res != -1) { //  确保 rid 没有被删除或上传
+                del.push_back(rid);
             }
-            current_id = request[current_id].prev_id;
         }
     }
 
-    printf("%d\n", abort_num);
-    for (int i = 1; i <= n_delete; i++) {
-        int id = _id[i];
-        int current_id = object[id].last_request_point;
-        while (current_id != 0) {
-            if (request[current_id].is_done == false) {
-                printf("%d\n", current_id);
-            }
-            current_id = request[current_id].prev_id;
-        }
-        for (int j = 1; j <= REP_NUM; j++) {
-            do_object_delete(object[id].unit[j], disk[object[id].replica[j]], object[id].size);
-        }
-        object[id].is_delete = true;
+    printf("%d\n", del.size());
+    for(const auto& rid : del) {
+        printf("%d\n", rid);
     }
 
+    // 清空 unit
+    for(int i = 0;i < n;i++) {
+        auto& obj = object[_id[i]];
+        for(int j = 1;j <= REP_NUM;j++) {
+            const int& disk_id = obj.replica[j];
+            
+        }
+    }
+    
     fflush(stdout);
 }
 
-//  object_unit[i] : 第 i 个对象块的存储位置
 void do_object_write(int* object_unit, int* disk_unit, int size, int object_id)
 {
     int current_write_point = 0;
@@ -207,19 +184,19 @@ int main()
 
     for (int i = 1; i <= M; i++) {
         for (int j = 1; j <= (T - 1) / FRE_PER_SLICING + 1; j++) {
-            scanf("%*d");
+            scanf("%d", &global_del[i][j]);
         }
     }
 
     for (int i = 1; i <= M; i++) {
         for (int j = 1; j <= (T - 1) / FRE_PER_SLICING + 1; j++) {
-            scanf("%*d");
+            scanf("%d", &global_write[i][j]);
         }
     }
 
     for (int i = 1; i <= M; i++) {
         for (int j = 1; j <= (T - 1) / FRE_PER_SLICING + 1; j++) {
-            scanf("%*d");
+            scanf("%d", &global_read[i][j]);
         }
     }
 
@@ -227,12 +204,12 @@ int main()
     fflush(stdout);
 
     for (int i = 1; i <= N; i++) {
-        disk_point[i] = 1;
+        disk[i] = Disk(i, V);
     }
 
     for (int t = 1; t <= T + EXTRA_TIME; t++) {
         timestamp_action();
-        delete_action();    
+        delete_action();
         write_action();     
         read_action();
     }
