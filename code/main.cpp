@@ -13,7 +13,6 @@ Disk disk[MAX_DISK_NUM];
 Unit unit[(MAX_DISK_NUM - 1) * (MAX_DISK_SIZE - 1) + 1];
 
 
-
 void timestamp_action()
 {
     int timestamp;
