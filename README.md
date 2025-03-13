@@ -4,6 +4,7 @@ To manage the project of the 2025 Huawei Software Elite Challenge in the prelimi
 ## 相关运行操作
 
 ```
+python run.py interactor.exe ../data/practice.in ../code/code_craft.exe
 (1) 运行交互操作
 建议将main.exe存放在code里面，在此基础下：
 
