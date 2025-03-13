@@ -1,35 +1,18 @@
-#include <cstdio>
-#include <cassert>
-#include <cstdlib>
+#include "utils.h"
+#include "Block.h"
+#include "Disk.h"
+#include "Unit.h"
+#include "Request.h"
+#include "Object.h"
 
-#define MAX_DISK_NUM (10 + 1)
-#define MAX_DISK_SIZE (16384 + 1)
-#define MAX_REQUEST_NUM (30000000 + 1)
-#define MAX_OBJECT_NUM (100000 + 1)
-#define REP_NUM (3)
-#define FRE_PER_SLICING (1800)
-#define EXTRA_TIME (105)
-
-typedef struct Request_ {
-    int object_id;
-    int prev_id;
-    bool is_done;
-} Request;
-
-typedef struct Object_ {
-    int replica[REP_NUM + 1];
-    int* unit[REP_NUM + 1];
-    int size;
-    int last_request_point;
-    bool is_delete;
-} Object;
 
 Request request[MAX_REQUEST_NUM];
 Object object[MAX_OBJECT_NUM];
+Block block[MAX_OBJECT_NUM * (MAX_OBJECT_SIZE - 1) + 1];
+Disk disk[MAX_DISK_NUM];
+Unit unit[(MAX_DISK_NUM - 1) * (MAX_DISK_SIZE - 1) + 1];
 
-int T, M, N, V, G;
-int disk[MAX_DISK_NUM][MAX_DISK_SIZE];
-int disk_point[MAX_DISK_NUM];
+
 
 void timestamp_action()
 {
@@ -157,17 +140,20 @@ void read_action()
             printf("#\n");
         }
         printf("0\n");
-    } else {
+    }
+    else {
         current_phase++;
         object_id = request[current_request].object_id;
         for (int i = 1; i <= N; i++) {
             if (i == object[object_id].replica[1]) {
                 if (current_phase % 2 == 1) {
                     printf("j %d\n", object[object_id].unit[1][current_phase / 2 + 1]);
-                } else {
+                }
+                else {
                     printf("r#\n");
                 }
-            } else {
+            }
+            else {
                 printf("#\n");
             }
         }
@@ -175,13 +161,15 @@ void read_action()
         if (current_phase == object[object_id].size * 2) {
             if (object[object_id].is_delete) {
                 printf("0\n");
-            } else {
+            }
+            else {
                 printf("1\n%d\n", current_request);
                 request[current_request].is_done = true;
             }
             current_request = 0;
             current_phase = 0;
-        } else {
+        }
+        else {
             printf("0\n");
         }
     }
@@ -200,6 +188,7 @@ void clean()
         }
     }
 }
+
 
 int main()
 {
