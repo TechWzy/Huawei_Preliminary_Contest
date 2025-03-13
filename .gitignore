@@ -7,8 +7,10 @@ code/code_craft.exe
 code/code_craft.ilk
 code/code_craft.pdb
 replay
-.idea
 code/code_craft.exe
 code/code_craft.ilk
 code/code_craft.pdb
-resources/result.txt
+resources
+华为软挑初赛
+resources/log/code_craft.log
+.gitignore
