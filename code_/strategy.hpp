@@ -13,12 +13,12 @@ extern Disk disk[MAX_DISK_NUM];
 extern Block block[MAX_OBJECT_NUM][MAX_OBJECT_SIZE];
 extern Object object[MAX_OBJECT_NUM];
 extern Segmentree seg[MAX_DISK_NUM];
-extern vector<int> Outdated_Request[MAX_TIME];
+extern queue<array<int, 2>>q;
 
 void add_request_to_segmentree(int rid) {
     int oid = request[rid].object_id;
     const double bs = 0.5 * (object[oid].size + 1) / object[oid].size;
-    Outdated_Request[request[rid].ocur_time + EXIST_TIME].push_back(rid);
+    q.push({request[rid].ocur_time + EXIST_TIME, rid});
     for(int i = 1;i <= REP_NUM;i++) {
         int disk_id = object[oid].replica[i];
         for(int j = 1;j <= object[oid].size;j++) {

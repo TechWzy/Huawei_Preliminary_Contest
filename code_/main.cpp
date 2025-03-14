@@ -7,7 +7,7 @@ Disk disk[MAX_DISK_NUM];
 Object object[MAX_OBJECT_NUM];
 Block block[MAX_OBJECT_NUM][MAX_OBJECT_SIZE];
 Segmentree seg[MAX_DISK_NUM];
-vector<int> Outdated_Request[MAX_TIME];
+queue<array<int, 2>>q;
 
 int T, M, N, V, G;
 int global_state[3 * MAX_TAG_NUM][MAX_REQUEST_NUM / FRE_PER_SLICING + 10];
@@ -215,10 +215,10 @@ int main()
         delete_action();
         write_action();
         read_action();
-        for(auto rid : Outdated_Request[t]) {
-            deleted_request(rid);
+        while(q.size() && q.front()[0] == t) {
+            deleted_request(q.front()[1]);
+            q.pop();
         }
-        Outdated_Request[t].clear();
     }
 
     return 0;
