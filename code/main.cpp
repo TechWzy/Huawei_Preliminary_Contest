@@ -1,9 +1,9 @@
-#include "utils.h"
-#include "Block.h"
-#include "Disk.h"
-#include "Unit.h"
-#include "Request.h"
-#include "Object.h"
+#include "utils.hpp"
+#include "Block.hpp"
+#include "Disk.hpp"
+#include "Unit.hpp"
+#include "Request.hpp"
+#include "Object.hpp"
 
 
 Request request[MAX_REQUEST_NUM];
