@@ -32,8 +32,7 @@ public:
     std::pair<int, std::set<int>> deleted() {
         // 对应删除磁盘上的对象
         for (int i = 1; i <= REP_NUM; i++) {
-            int first_pos = unit_id[i][1];
-            disk[replica[i]].delete_object(id, size, first_pos);
+            disk[replica[i]].delete_object(id, size);
         }
 
         // 对应删除单元上的对象

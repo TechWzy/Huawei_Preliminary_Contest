@@ -1,9 +1,10 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 import os
+from matplotlib.backends.backend_pdf import PdfPages
 
 # 读取Excel文件
-file_path = ("标签分布.xlsx")  # 请替换为你的Excel文件路径
+file_path = "标签分布.xlsx"  # 请替换为你的Excel文件路径
 df = pd.read_excel(file_path, header=None)
 
 # 只保留从第三列开始的数据
@@ -28,21 +29,23 @@ time_intervals = [i * 1800 for i in range(data.shape[1])]
 scale_factor = (delete_data.max() + store_data.max()) / read_data.max()
 read_data_scaled = read_data * scale_factor
 
-# 创建保存图片的文件夹
+# 创建保存PDF的文件夹
 output_folder = "折线图"
 os.makedirs(output_folder, exist_ok=True)
 
-# 绘制16个折线图并保存
-for i in range(num_labels):
-    plt.figure(figsize=(6, 4))
-    plt.plot(time_intervals, delete_data[i], label='Delete', color='red')
-    plt.plot(time_intervals, store_data[i], label='Store', color='blue')
-    plt.plot(time_intervals, read_data_scaled[i], label='Read (scaled)', color='green')
-    plt.title(f'Label {i+1}')
-    plt.xlabel('Time')
-    plt.ylabel('Count')
-    plt.legend()
-    plt.savefig(os.path.join(output_folder, f'Label_{i+1}.png'))
-    plt.close()
+# 创建PDF文件
+pdf_path = os.path.join(output_folder, "折线图_2.pdf")
+with PdfPages(pdf_path) as pdf:
+    for i in range(num_labels):
+        plt.figure(figsize=(6, 4))
+        plt.plot(time_intervals, delete_data[i], label='Delete', color='red')
+        plt.plot(time_intervals, store_data[i], label='Store', color='blue')
+        # plt.plot(time_intervals, read_data_scaled[i], label='Read (scaled)', color='green')
+        plt.title(f'Label {i+1}')
+        plt.xlabel('Time')
+        plt.ylabel('Count')
+        plt.legend()
+        pdf.savefig()
+        plt.close()
 
-print(f"所有折线图已保存至 {output_folder} 文件夹。")
+print(f"所有折线图已保存至 {pdf_path} 文件。")

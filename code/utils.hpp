@@ -12,6 +12,9 @@
 #define MAX_TAG_NUM (16 + 1)
 #define MAX_OBJECT_SIZE (5 + 1)
 #define READ_TAKE_TOKENS (64)
+#define DISK_BLOCK_NUM (400+1)
+#define DISK_BLOCK_GU (300+1)
+#define DISK_BLOCK_SUI (100+1)
 
 extern int T, M, N, V, G;
 // 存每1800时间片的全部操作的数量

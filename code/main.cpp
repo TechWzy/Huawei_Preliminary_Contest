@@ -14,10 +14,11 @@ Block block[MAX_OBJECT_NUM][MAX_OBJECT_SIZE];
 
 int T, M, N, V, G;
 int global_state[3 * MAX_TAG_NUM][MAX_REQUEST_NUM / FRE_PER_SLICING + 10];
-int quan_test;
+
+int timestamp;
 void timestamp_action()
 {
-    int timestamp;
+    timestamp;
     scanf("%*s%d", &timestamp);
     printf("TIMESTAMP %d\n", timestamp);
     fflush(stdout);
@@ -47,9 +48,52 @@ void delete_action()
     fflush(stdout);
 }
 
+
+// 写入位置操作
+void do_write(int id,int size,int j,int dk_id,int first_empty) {
+    printf("%d", dk_id);
+    // 寻找收集具体插入的位置
+    int curcurrent_write_num = 0;
+    std::vector<int> block_pos;
+    for (int k = first_empty; k <= V; k++) {
+        if (!unit[dk_id][k].is_exist) {
+            // 更新单元状态
+            printf(" %d", k);
+            unit[dk_id][k].add_block(id, ++curcurrent_write_num);
+            block_pos.push_back(k);
+        }
+        if (curcurrent_write_num == size) {
+
+            // 将位置保存到对象中
+            object[id].set_pos(j, block_pos, dk_id);
+            break;
+        }
+    }
+}
+
+
+// 检查一个标签是否有过固定块,并且固定块能装下
+int check_tag_is_exixt(int tag, int size, int& first_empty, int& first_empty_block, bool is_have_copy[]) {
+    for (int i = 1; i <= MAX_DISK_NUM - 1; i++) {
+
+        // 同一个对象的副本不能再在一个磁盘
+        if (is_have_copy[i]) continue;
+        auto [new_first_empty, new_first_empty_block] = disk[i].check_tag(tag, size);
+        first_empty = new_first_empty;
+        first_empty_block = new_first_empty_block;
+        if (first_empty && first_empty_block) {
+            return i;
+        }
+    }
+    return 0;
+}
+
 void write_action()
 {
     int n_write;
+
+    // 同一个对象的副本不能存同一个磁盘
+    bool is_have_copy[MAX_DISK_NUM] = { 0 };
     scanf("%d", &n_write);
     for (int i = 1; i <= n_write; i++) {
         int id, size, tag;
@@ -58,37 +102,77 @@ void write_action()
 
         // 打印对象编号
         printf("%d\n", id);
+
+        memset(is_have_copy, 0, sizeof(is_have_copy));
+
+        // 前两个副本存固定块
         for (int j = 1; j <= REP_NUM; j++) {
-            int dk_id = (id + j) % N + 1;
 
-            // 找到可以插入的磁盘id
-            int first_empty = disk[dk_id].add_object(id, size);
-            while (!first_empty) {
-                dk_id = (dk_id % N) + 1;
-                first_empty = disk[dk_id].add_object(id, size);
-            }
-            printf("%d", dk_id);
-            // 寻找收集具体插入的位置
-            int curcurrent_write_num = 0;
-            std::vector<int> block_pos;
-            for (int k = first_empty; k <= V; k++) {
-                if (!unit[dk_id][k].is_exist) {
-                    // 更新单元状态
-                    printf(" %d", k);
-                    unit[dk_id][k].add_block(id, ++curcurrent_write_num);
-                    block_pos.push_back(k);
+            int first_empty = 0, first_empty_block = 0;
+
+            int dk_id = check_tag_is_exixt(tag, size,first_empty, first_empty_block, is_have_copy);
+
+            // 没有出现过找第一个空块
+            if (!dk_id) {
+                dk_id = (id + j) % N + 1;
+                // 找到可以插入的磁盘id
+                auto [new_first_empty, new_first_empty_block] = disk[dk_id].disk_want_write_gu(tag, size);
+                first_empty = new_first_empty;
+                first_empty_block = new_first_empty_block;
+                int temp_cnt = 1;
+                // 一直找，最多10次
+                while (!first_empty_block || is_have_copy[dk_id]) {
+                    dk_id = (dk_id % N) + 1;
+                    temp_cnt++;
+                    auto [new_first_empty, new_first_empty_block] = disk[dk_id].disk_want_write_gu(tag, size);
+                    first_empty = new_first_empty;
+                    first_empty_block = new_first_empty_block;
+                    if (temp_cnt > MAX_DISK_NUM + 10) {
+                        break;
+                    }
+                    //assert(temp_cnt < MAX_DISK_NUM + 10);
                 }
-                if (curcurrent_write_num == size) {
 
-                    // 将位置保存到对象中
-                    object[id].set_pos(j, block_pos, dk_id);
-                    // 更新第一个空位置
-                    while (k <= V && !unit[dk_id][k].is_exist) k++;
-                    disk[dk_id].first_empty = k;
 
-                    break;
-                }
             }
+            if (first_empty_block == 0 || is_have_copy[dk_id]) {
+                dk_id = id % N + 1;
+                int temp_cnt = 1;
+                first_empty = disk[dk_id].disk_want_write_sui(size);
+                while (!first_empty || is_have_copy[dk_id]) {
+                    dk_id = dk_id % N + 1;
+                    temp_cnt++;
+                    first_empty = disk[dk_id].disk_want_write_sui(size);
+                    assert(temp_cnt < MAX_DISK_NUM + 10);
+                }
+                disk[dk_id].add_object_sui(id, size);
+                is_have_copy[dk_id] = true;
+                do_write(id, size, j, dk_id, first_empty);
+                printf("\n");
+            }
+            else {
+                is_have_copy[dk_id] = true;
+                // 更新磁盘并写入
+                disk[dk_id].add_object_gu(id, size, tag, first_empty_block);
+                do_write(id, size, j, dk_id, first_empty);
+                printf("\n");
+            }
+
+        }
+
+        for (int j = 3; j <= REP_NUM; j++) {
+            int dk_id = id % N + 1;
+            int temp_cnt = 1;
+            int first_empty = disk[dk_id].disk_want_write_sui(size);
+            while (!first_empty || is_have_copy[dk_id]) {
+                dk_id = dk_id % N + 1;
+                temp_cnt++;
+                first_empty = disk[dk_id].disk_want_write_sui(size);
+                assert(temp_cnt < MAX_DISK_NUM + 10);
+            }
+            disk[dk_id].add_object_sui(id, size);
+            is_have_copy[dk_id] = true;
+            do_write(id, size, j, dk_id, first_empty);
             printf("\n");
         }
     }
@@ -141,11 +225,13 @@ void read_action()
     std::vector<int> complete_id;
     for (int i = 1; i <= N; i++) {
 
-        // 第一波检查，查看是JUMP还是PASS
+        // 第一波检查，查看读固还是读随
         int j;
         bool ok = false;
-        for (j = 0; j <= G; j++) {
-            if (check_value(i, disk[i].point + j)) {
+        for (j = 0; j < G; j++) {
+            int temp_pos = disk[i].point + j;
+            if (temp_pos > V) temp_pos -= V;
+            if (check_value(i, temp_pos)) {
                 ok = true;
                 break;
             }
@@ -225,8 +311,20 @@ void read_action()
 
 int main()
 {
-    scanf("%d%d%d%d%d", &T, &M, &N, &V, &G);
+    // 打开.in文件并将标准输入重定向到该文件
     
+    /*
+    if (freopen("..//data//sample_practice.in", "r", stdin) == nullptr) {
+        // 如果文件打开失败，输出错误信息并返回1
+        perror("无法打开文件");
+        return 1;
+    }
+    //*/
+    
+
+
+    scanf("%d%d%d%d%d", &T, &M, &N, &V, &G);
+   
     for (int i = 1; i <= N; i++) {
         disk[i].set(V, G);
     }
@@ -236,7 +334,6 @@ int main()
             scanf("%d", &global_state[i][j]);
         }
     }
-
     put_ok();
     for (int t = 1; t <= T + EXTRA_TIME; t++) {
         timestamp_action();
@@ -245,5 +342,12 @@ int main()
         read_action();
     }
 
+    // 关闭文件并将标准输入恢复到默认的键盘输入
+    /*
+    if (fclose(stdin) != 0) {
+        perror("无法关闭文件");
+        return 1;
+    }
+    //*/
     return 0;
 }
