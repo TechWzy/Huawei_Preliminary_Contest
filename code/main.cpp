@@ -1,3 +1,4 @@
+#pragma once
 #include "utils.hpp"
 #include "Block.hpp"
 #include "Disk.hpp"
@@ -5,31 +6,22 @@
 #include "Request.hpp"
 #include "Object.hpp"
 
+Unit unit[MAX_DISK_NUM][MAX_DISK_SIZE];
+Request request[MAX_REQUEST_NUM];
+Disk disk[MAX_DISK_NUM];
+Object object[MAX_OBJECT_NUM];
+Block block[MAX_OBJECT_NUM][MAX_OBJECT_SIZE];
 
 int T, M, N, V, G;
 int global_state[3 * MAX_TAG_NUM][MAX_REQUEST_NUM / FRE_PER_SLICING + 10];
 
 int timestamp;
-Request request[MAX_REQUEST_NUM];
-Object object[MAX_OBJECT_NUM];
-Block block[MAX_OBJECT_NUM * (MAX_OBJECT_SIZE - 1) + 1];
-Disk disk[MAX_DISK_NUM];
-Unit unit[(MAX_DISK_NUM - 1) * (MAX_DISK_SIZE - 1) + 1];
-
 void timestamp_action()
 {
     timestamp;
     scanf("%*s%d", &timestamp);
     printf("TIMESTAMP %d\n", timestamp);
-
     fflush(stdout);
-}
-
-void do_object_delete(const int* object_unit, int* disk_unit, int size)
-{
-    for (int i = 1; i <= size; i++) {
-        disk_unit[object_unit[i]] = 0;
-    }
 }
 
 void delete_action()
@@ -37,7 +29,7 @@ void delete_action()
     int n_delete;
     int abort_num = 0;
     static int _id[MAX_OBJECT_NUM];
-
+    std::set<int> abort_set; // ¼ÇÂ¼É¾³ý¼¯ºÏ
     scanf("%d", &n_delete);
     for (int i = 1; i <= n_delete; i++) {
         scanf("%d", &_id[i]);
@@ -45,51 +37,34 @@ void delete_action()
 
     for (int i = 1; i <= n_delete; i++) {
         int id = _id[i];
-        int current_id = object[id].last_request_point;
-        while (current_id != 0) {
-            if (request[current_id].is_done == false) {
-                abort_num++;
-            }
-            current_id = request[current_id].prev_id;
-        }
+        auto [num, set_] = object[id].deleted();
+        abort_num += num;
+        abort_set.insert(set_.begin(), set_.end());
     }
-
     printf("%d\n", abort_num);
-    for (int i = 1; i <= n_delete; i++) {
-        int id = _id[i];
-        int current_id = object[id].last_request_point;
-        while (current_id != 0) {
-            if (request[current_id].is_done == false) {
-                printf("%d\n", current_id);
-            }
-            current_id = request[current_id].prev_id;
-        }
-        for (int j = 1; j <= REP_NUM; j++) {
-            do_object_delete(object[id].unit[j], disk[object[id].replica[j]], object[id].size);
-        }
-        object[id].is_delete = true;
+    for (int rd_id : abort_set) {
+        printf("%d\n", rd_id);
     }
-
     fflush(stdout);
 }
 
 
-// Ð´ï¿½ï¿½Î»ï¿½Ã²ï¿½ï¿½ï¿½
+// Ð´ÈëÎ»ÖÃ²Ù×÷
 void do_write(int id,int size,int j,int dk_id,int first_empty) {
     printf("%d", dk_id);
-    // Ñ°ï¿½ï¿½ï¿½Õ¼ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Î»ï¿½ï¿½
+    // Ñ°ÕÒÊÕ¼¯¾ßÌå²åÈëµÄÎ»ÖÃ
     int curcurrent_write_num = 0;
     std::vector<int> block_pos;
     for (int k = first_empty; k <= V; k++) {
         if (!unit[dk_id][k].is_exist) {
-            // ï¿½ï¿½ï¿½Âµï¿½Ôª×´Ì¬
+            // ¸üÐÂµ¥Ôª×´Ì¬
             printf(" %d", k);
             unit[dk_id][k].add_block(id, ++curcurrent_write_num);
             block_pos.push_back(k);
         }
         if (curcurrent_write_num == size) {
 
-            // ï¿½ï¿½Î»ï¿½Ã±ï¿½ï¿½æµ½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+            // ½«Î»ÖÃ±£´æµ½¶ÔÏóÖÐ
             object[id].set_pos(j, block_pos, dk_id);
             break;
         }
@@ -97,11 +72,11 @@ void do_write(int id,int size,int j,int dk_id,int first_empty) {
 }
 
 
-// ï¿½ï¿½ï¿½Ò»ï¿½ï¿½ï¿½ï¿½Ç©ï¿½Ç·ï¿½ï¿½Ð¹ï¿½ï¿½Ì¶ï¿½ï¿½ï¿½,ï¿½ï¿½ï¿½Ò¹Ì¶ï¿½ï¿½ï¿½ï¿½ï¿½×°ï¿½ï¿½
+// ¼ì²éÒ»¸ö±êÇ©ÊÇ·ñÓÐ¹ý¹Ì¶¨¿é,²¢ÇÒ¹Ì¶¨¿éÄÜ×°ÏÂ
 int check_tag_is_exixt(int tag, int size, int& first_empty, int& first_empty_block, bool is_have_copy[]) {
     for (int i = 1; i <= MAX_DISK_NUM - 1; i++) {
 
-        // Í¬Ò»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä¸ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ò»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+        // Í¬Ò»¸ö¶ÔÏóµÄ¸±±¾²»ÄÜÔÙÔÚÒ»¸ö´ÅÅÌ
         if (is_have_copy[i]) continue;
         auto [new_first_empty, new_first_empty_block] = disk[i].check_tag(tag, size);
         first_empty = new_first_empty;
@@ -111,65 +86,41 @@ int check_tag_is_exixt(int tag, int size, int& first_empty, int& first_empty_blo
         }
     }
     return 0;
-
-//  object_unit[i] : ç¬¬ i ä¸ªå¯¹è±¡å—çš„å­˜å‚¨ä½ç½®
-void do_object_write(int* object_unit, int* disk_unit, int size, int object_id)
-{
-    int current_write_point = 0;
-    for (int i = 1; i <= V; i++) {
-        if (disk_unit[i] == 0) {
-            disk_unit[i] = object_id;
-            object_unit[++current_write_point] = i;
-            if (current_write_point == size) {
-                break;
-            }
-        }
-    }
-
-    assert(current_write_point == size);
-
 }
 
 void write_action()
 {
     int n_write;
 
-    // Í¬Ò»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä¸ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ü´ï¿½Í¬Ò»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+    // Í¬Ò»¸ö¶ÔÏóµÄ¸±±¾²»ÄÜ´æÍ¬Ò»¸ö´ÅÅÌ
     bool is_have_copy[MAX_DISK_NUM] = { 0 };
     scanf("%d", &n_write);
     for (int i = 1; i <= n_write; i++) {
-        int id, size;
-        scanf("%d%d%*d", &id, &size);
-        object[id].last_request_point = 0;
-        for (int j = 1; j <= REP_NUM; j++) {
-            object[id].replica[j] = (id + j) % N + 1;
-            object[id].unit[j] = static_cast<int*>(malloc(sizeof(int) * (size + 1)));
-            object[id].size = size;
-            object[id].is_delete = false;
-            do_object_write(object[id].unit[j], disk[object[id].replica[j]], size, id);
-        }
+        int id, size, tag;
+        scanf("%d%d%d", &id, &size, &tag);
+        object[id].set(size, tag);
 
+        // ´òÓ¡¶ÔÏó±àºÅ
         printf("%d\n", id);
 
         memset(is_have_copy, 0, sizeof(is_have_copy));
 
-        // Ç°ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ì¶ï¿½ï¿½ï¿½
-        for (int j = 1; j <= REP_NUM; j++) {
-
+        // Ç°Á½¸ö¸±±¾´æ¹Ì¶¨¿é
+        for (int j = 1; j <= REP_NUM - 1; j++) {
 
             int first_empty = 0, first_empty_block = 0;
 
             int dk_id = check_tag_is_exixt(tag, size,first_empty, first_empty_block, is_have_copy);
 
-            // Ã»ï¿½Ð³ï¿½ï¿½Ö¹ï¿½ï¿½Òµï¿½Ò»ï¿½ï¿½ï¿½Õ¿ï¿½
+            // Ã»ÓÐ³öÏÖ¹ýÕÒµÚÒ»¸ö¿Õ¿é
             if (!dk_id) {
                 dk_id = (id + j) % N + 1;
-                // ï¿½Òµï¿½ï¿½ï¿½ï¿½Ô²ï¿½ï¿½ï¿½Ä´ï¿½ï¿½ï¿½id
+                // ÕÒµ½¿ÉÒÔ²åÈëµÄ´ÅÅÌid
                 auto [new_first_empty, new_first_empty_block] = disk[dk_id].disk_want_write_gu(tag, size);
                 first_empty = new_first_empty;
                 first_empty_block = new_first_empty_block;
                 int temp_cnt = 1;
-                // Ò»Ö±ï¿½Ò£ï¿½ï¿½ï¿½ï¿½10ï¿½ï¿½
+                // Ò»Ö±ÕÒ£¬×î¶à10´Î
                 while (!first_empty_block || is_have_copy[dk_id]) {
                     dk_id = (dk_id % N) + 1;
                     temp_cnt++;
@@ -183,10 +134,6 @@ void write_action()
                 }
 
 
-
-            printf("%d", object[id].replica[j]);
-            for (int k = 1; k <= size; k++) {
-                printf(" %d", object[id].unit[j][k]);
             }
             if (first_empty_block == 0 || is_have_copy[dk_id]) {
                 dk_id = id % N + 1;
@@ -205,7 +152,7 @@ void write_action()
             }
             else {
                 is_have_copy[dk_id] = true;
-                // ï¿½ï¿½ï¿½Â´ï¿½ï¿½Ì²ï¿½Ð´ï¿½ï¿½
+                // ¸üÐÂ´ÅÅÌ²¢Ð´Èë
                 disk[dk_id].add_object_gu(id, size, tag, first_empty_block);
                 do_write(id, size, j, dk_id, first_empty);
                 printf("\n");
@@ -213,6 +160,7 @@ void write_action()
 
         }
 
+        // ÊÇ·ñÓÐ¸±±¾¿é·Åµ½Ëæ»úÇøÓò
         for (int j = 3; j <= REP_NUM; j++) {
             int dk_id = id % N + 1;
             int temp_cnt = 1;
@@ -233,6 +181,36 @@ void write_action()
     fflush(stdout);
 }
 
+// ¼ì²é´ÅÅÌÎ»ÖÃÊÇ·ñÓÐ¼ÛÖµ
+bool check_value(int dk_id , int pos)
+{
+    int oj_id = unit[dk_id][pos].object_id;
+    int bk_id = unit[dk_id][pos].block_order;
+    return block[oj_id][bk_id].check();
+}
+
+std::vector<int> do_read(int dk_id) {
+    std::vector<int> complete_id;
+    int pos = disk[dk_id].point;
+    int oj_id = unit[dk_id][pos].object_id;
+    int bk_id = unit[dk_id][pos].block_order;
+    std::set<int> temp_set = block[oj_id][bk_id].requested_id_block;
+    for (int rq_id : temp_set) {
+
+        // ¼ì²é¿ÉÄÜÍê³ÉµÄÇëÇóÃ¿Ò»´Î
+        if (request[rq_id].readed(bk_id)) {
+            complete_id.push_back(rq_id);
+            object[oj_id].requested_id.erase(rq_id);
+        }
+        block[oj_id][bk_id].requested_id_block.erase(rq_id);
+    }
+    disk[dk_id].point = (disk[dk_id].point % V) + 1;
+    disk[dk_id].last_point_status = READ;
+    printf("r");
+    fflush(stdout);
+    return complete_id;
+}
+
 void read_action()
 {
     int n_read;
@@ -240,14 +218,15 @@ void read_action()
     scanf("%d", &n_read);
     for (int i = 1; i <= n_read; i++) {
         scanf("%d%d", &request_id, &object_id);
-        request[request_id].object_id = object_id;
-        request[request_id].prev_id = object[object_id].last_request_point;
-        object[object_id].last_request_point = request_id;
-        request[request_id].is_done = false;
+
+        // Ìí¼Ó²¢´´½¨ÇëÇó
+        object[object_id].add_request(request_id);
     }
+    int complete = 0;
+    std::vector<int> complete_id;
+    for (int i = 1; i <= N; i++) {
 
-
-        // ï¿½ï¿½Ò»ï¿½ï¿½ï¿½ï¿½é£¬ï¿½é¿´ï¿½ï¿½ï¿½Ì»ï¿½ï¿½Ç¶ï¿½ï¿½ï¿½
+        // µÚÒ»²¨¼ì²é£¬²é¿´¶Á¹Ì»¹ÊÇ¶ÁËæ
         int j;
         bool ok = false;
         for (j = 0; j < G; j++) {
@@ -257,77 +236,88 @@ void read_action()
                 ok = true;
                 break;
             }
-
-    static int current_request = 0;
-    static int current_phase = 0;
-    if (!current_request && n_read > 0) {
-        current_request = request_id;
-    }
-    if (!current_request) {
-        for (int i = 1; i <= N; i++) {
-            printf("#\n");
-
         }
-        printf("0\n");
-    }
-    else {
-        current_phase++;
-        object_id = request[current_request].object_id;
-        for (int i = 1; i <= N; i++) {
-            if (i == object[object_id].replica[1]) {
-                if (current_phase % 2 == 1) {
-                    printf("j %d\n", object[object_id].unit[1][current_phase / 2 + 1]);
+
+        // ¸Ã´ÅÅÌÃ»»ú»á¶ÁÁË
+        if (ok == false) {
+            // ¼ì²é¸Ã´ÅÅÌÊÇ·ñÓÐÓÐ¼ÛÖµµÄ¿é£¬Èç¹ûÓÐjump¹ýÈ¥
+            // Ã»ÓÐ¸Ã´ÅÅÌÂÔ¹ý
+            bool exist_value = false;
+            int k;
+            for (k = 1; k <= V; k++)
+            {
+                if (check_value(i, k)) {
+                    exist_value = true;
+                    break;
+                }
+            }
+            if (exist_value)
+            {
+                printf("j %d\n", k);
+                fflush(stdout);
+                disk[i].point = k;
+                disk[i].last_point_status = JUMP;
+            }
+            else {
+                // Ã¿¼ÛÖµ¾Í²»¶¯
+                printf("#\n");
+                fflush(stdout);
+            }
+        }
+        else { // ¸Ã´ÅÅÌÓÐ»ú»á¶Á£¬×¼±¸°ÑtokensÏûºÄÍê°É
+            while (disk[i].rest_tokens > 0) {
+                while (disk[i].rest_tokens > 0 && !check_value(i, disk[i].point)) {
+                    disk[i].last_point_status = PASS;
+                    disk[i].rest_tokens--;
+                    disk[i].last_take_tokens = 1;
+                    disk[i].point = (disk[i].point % V) + 1;
+                    printf("p");
+                    fflush(stdout);
+                }
+                if (disk[i].rest_tokens == 0) {
+                    break;
+                }
+                int cur_take_tokens = READ_TAKE_TOKENS;
+                if (disk[i].last_point_status == READ) {
+                    cur_take_tokens = std::max(16, static_cast<int>(std::ceil(disk[i].last_take_tokens * 0.8)));
+                }
+
+                if (disk[i].rest_tokens >= cur_take_tokens)
+                {
+                    disk[i].rest_tokens -= cur_take_tokens;
+                    std::vector<int> temp_vector = do_read(i);
+                    complete_id.insert(complete_id.begin(), temp_vector.begin(), temp_vector.end());
+                    disk[i].last_take_tokens = cur_take_tokens;
                 }
                 else {
-                    printf("r#\n");
+                    break;
                 }
+                
             }
-            else {
-                printf("#\n");
-            }
+            printf("#\n");
+            fflush(stdout);
         }
+        disk[i].rest_tokens = G;
 
-        if (current_phase == object[object_id].size * 2) {
-            if (object[object_id].is_delete) {
-                printf("0\n");
-            }
-            else {
-                printf("1\n%d\n", current_request);
-                request[current_request].is_done = true;
-            }
-            current_request = 0;
-            current_phase = 0;
-        }
-        else {
-            printf("0\n");
-        }
     }
-
+    printf("%d\n", complete_id.size());
     fflush(stdout);
-}
-
-void clean()
-{
-    for (auto& obj : object) {
-        for (int i = 1; i <= REP_NUM; i++) {
-            if (obj.unit[i] == nullptr)
-                continue;
-            free(obj.unit[i]);
-            obj.unit[i] = nullptr;
-        }
+    for (int rq_id : complete_id) {
+        printf("%d\n", rq_id);
+        fflush(stdout);
     }
+
 }
 
 
 int main()
 {
-
-    // ï¿½ï¿½.inï¿½Ä¼ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½×¼ï¿½ï¿½ï¿½ï¿½ï¿½Ø¶ï¿½ï¿½òµ½¸ï¿½ï¿½Ä¼ï¿½
+    // ´ò¿ª.inÎÄ¼þ²¢½«±ê×¼ÊäÈëÖØ¶¨Ïòµ½¸ÃÎÄ¼þ
     
     /*
     if (freopen("..//data//sample_practice.in", "r", stdin) == nullptr) {
-        // ï¿½ï¿½ï¿½ï¿½Ä¼ï¿½ï¿½ï¿½Ê§ï¿½Ü£ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ï¢ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½1
-        perror("ï¿½Þ·ï¿½ï¿½ï¿½ï¿½Ä¼ï¿½");
+        // Èç¹ûÎÄ¼þ´ò¿ªÊ§°Ü£¬Êä³ö´íÎóÐÅÏ¢²¢·µ»Ø1
+        perror("ÎÞ·¨´ò¿ªÎÄ¼þ");
         return 1;
     }
     //*/
@@ -339,52 +329,24 @@ int main()
     for (int i = 1; i <= N; i++) {
         disk[i].set(V, G);
     }
-    //ï¿½ï¿½È¡È«ï¿½ï¿½×´Ì¬
+    //¶ÁÈ¡È«¾Ö×´Ì¬
     for (int i = 1; i <= 3 * M; i++) {
-
-    scanf("%d%d%d%d%d", &T, &M, &N, &V, &G);
-
-    for (int i = 1; i <= M; i++) {
-
         for (int j = 1; j <= (T - 1) / FRE_PER_SLICING + 1; j++) {
-            scanf("%*d");
+            scanf("%d", &global_state[i][j]);
         }
     }
-
     put_ok();
-
-    for (int i = 1; i <= M; i++) {
-        for (int j = 1; j <= (T - 1) / FRE_PER_SLICING + 1; j++) {
-            scanf("%*d");
-        }
-    }
-
-    for (int i = 1; i <= M; i++) {
-        for (int j = 1; j <= (T - 1) / FRE_PER_SLICING + 1; j++) {
-            scanf("%*d");
-        }
-    }
-
-    printf("OK\n");
-    fflush(stdout);
-
-    for (int i = 1; i <= N; i++) {
-        disk_point[i] = 1;
-    }
-
-
     for (int t = 1; t <= T + EXTRA_TIME; t++) {
         timestamp_action();
-        delete_action();    
-        write_action();     
+        delete_action();
+        write_action();
         read_action();
     }
-    clean();
 
-    // ï¿½Ø±ï¿½ï¿½Ä¼ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½×¼ï¿½ï¿½ï¿½ï¿½Ö¸ï¿½ï¿½ï¿½Ä¬ï¿½ÏµÄ¼ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+    // ¹Ø±ÕÎÄ¼þ²¢½«±ê×¼ÊäÈë»Ö¸´µ½Ä¬ÈÏµÄ¼üÅÌÊäÈë
     /*
     if (fclose(stdin) != 0) {
-        perror("ï¿½Þ·ï¿½ï¿½Ø±ï¿½ï¿½Ä¼ï¿½");
+        perror("ÎÞ·¨¹Ø±ÕÎÄ¼þ");
         return 1;
     }
     //*/
