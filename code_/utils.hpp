@@ -12,16 +12,25 @@
 #define MAX_TAG_NUM (16 + 1)
 #define MAX_OBJECT_SIZE (5 + 1)
 #define READ_TAKE_TOKENS (64)
-#define DISK_BLOCK_NUM (400+1)
-#define DISK_BLOCK_GU (300+1)
-#define DISK_BLOCK_SUI (100+1)
+
+#define DISK_BLOCK_NUM (12+1)
+#define DISK_BLOCK_GU (9+1)
+#define DISK_BLOCK_SUI (3+1)
+
+#define next_step (5)
 
 extern int T, M, N, V, G;
-// ´æÃ¿1800Ê±¼äÆ¬µÄÈ«²¿²Ù×÷µÄÊýÁ¿
+// ï¿½ï¿½Ã¿1800Ê±ï¿½ï¿½Æ¬ï¿½ï¿½È«ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 extern int global_state[3 * MAX_TAG_NUM][MAX_REQUEST_NUM / FRE_PER_SLICING + 10];
+
+int get_cost(int cur_cost) {
+	return std::max(16, static_cast<int>(std::ceil(cur_cost * 0.8)));
+}
 
 void put_ok()
 {
 	printf("OK\n");
 	fflush(stdout);
 }
+
+

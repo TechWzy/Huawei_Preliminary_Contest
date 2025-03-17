@@ -2,6 +2,8 @@
 #pragma GCC optimize("O2")
 #include "utils.hpp"
 
+
+
 class Block {
 public:
 	int object_tag = 0; // 块的标签
@@ -13,6 +15,7 @@ public:
 	Block() {
 		
 	}
+
 
 	// 删除该块，重置所有信息
 	void deleted() {
