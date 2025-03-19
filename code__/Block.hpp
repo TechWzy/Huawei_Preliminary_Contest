@@ -2,8 +2,6 @@
 #pragma GCC optimize("O2")
 #include "utils.hpp"
 
-
-
 class Block {
 public:
 	int object_tag = 0; 
@@ -12,6 +10,7 @@ public:
 	std::set<int> requested_id_block; 
 	bool is_deleted = false; 
 	static int cnt;
+	
 	Block() {
 		
 	}

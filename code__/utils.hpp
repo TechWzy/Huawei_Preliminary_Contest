@@ -1,6 +1,10 @@
 #pragma once
 #pragma GCC optimize("O2")
 #include <bits/stdc++.h>
+using namespace std;
+
+using info = std::array<int, 3>;
+using TagResponse = std::pair<std::vector<info>, std::vector<info>>;
 
 #define MAX_DISK_NUM (10 + 1)
 #define MAX_DISK_SIZE (16384 + 1)
@@ -13,9 +17,8 @@
 #define MAX_OBJECT_SIZE (5 + 1)
 #define READ_TAKE_TOKENS (64)
 
-#define DISK_BLOCK_NUM (12+1)
-#define DISK_BLOCK_GU (9+1)
-#define DISK_BLOCK_SUI (3+1)
+#define DISK_BLOCK_GU (9)
+#define DISK_BLOCK_SUI_SIZE (500)		//	随机块的下限大小
 
 #define next_step (9)
 
@@ -23,9 +26,9 @@ extern int T, M, N, V, G;
 extern int global_state[3 * MAX_TAG_NUM][MAX_REQUEST_NUM / FRE_PER_SLICING + 10];
 
 enum Type{
-	del,
-	write, 
-	read
+	Delete,
+	Write, 
+	Read
 };
 
 int get_cost(int cur_cost) {
@@ -37,6 +40,11 @@ int get_current_time(int op = 0) {
 	static int Time = 0;
 	Time += op;
 	return Time;
+}
+
+int get_next_position(int cur, int st, int ed) {
+	assert(st <= ed);
+	return cur < ed?cur + 1 : st;
 }
 
 void put_ok()

@@ -2,8 +2,6 @@
 #pragma GCC optimize("O2")
 #include "utils.hpp"
 
-
-
 class Unit {
 public:
 	int disk_id; 
@@ -17,7 +15,7 @@ public:
 		id = cnt % MAX_DISK_SIZE;
 		cnt++;
 	}
-	
+	//��ǰ��Ԫ�ϵĿ鱻ɾ��
 	void deleted() {
 
 		is_exist = false;
