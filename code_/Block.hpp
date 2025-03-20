@@ -7,14 +7,15 @@
 class Block {
 public:
 	int object_tag = 0; 
-	int replica_block[REP_NUM + 1] = {0};
-	int unit_block[REP_NUM + 1] = {0};
+	int replica_block[REP_NUM + 1] = {0}; 
+	int unit_block[REP_NUM + 1] = {0}; 
 	std::set<int> requested_id_block; 
 	bool is_deleted = false; 
 	static int cnt;
 	Block() {
 		
 	}
+
 
 	void deleted() {
 		object_tag = 0;
@@ -34,10 +35,6 @@ public:
 	void add_request_block(int rd_id) {
 		requested_id_block.insert(rd_id);
 	}
-
-	void delete_outdated_request(int rid) {
-		requested_id_block.erase(rid);
-	} 
 
 	bool check()
 	{

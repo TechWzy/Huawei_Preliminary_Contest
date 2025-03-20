@@ -20,7 +20,7 @@ public:
 	int tag = 0;
 	int replica[REP_NUM + 1] = { 0 };
 	int r_replica[MAX_DISK_NUM] = { 0 };
-	int unit_id[REP_NUM + 1][MAX_OBJECT_SIZE] = { 0 };
+	int unit_id[REP_NUM + 1][MAX_OBJECT_SIZE] = { 0 }; 
 	std::set<int> requested_id;
 	bool is_deleted = false;
 	static int cnt;
@@ -29,18 +29,21 @@ public:
     }
 
     std::pair<int, std::set<int>> deleted() {
-
         for (int i = 1; i <= REP_NUM; i++) {
             disk[replica[i]].delete_object(id, size);
         }
+
         for (int i = 1; i <= REP_NUM; i++) {
             for (int j = 1; j <= size; j++) {
+
                 unit[replica[i]][unit_id[i][j]].deleted();
             }
         }
+        
         for (int i = 1; i <= size; i++) {
             block[id][size].deleted();
         }
+
         for (int rd_id : requested_id) {
             request[rd_id].deleted();
         }
@@ -81,3 +84,7 @@ public:
     }
 };
 int Object::cnt = 0;
+
+
+
+

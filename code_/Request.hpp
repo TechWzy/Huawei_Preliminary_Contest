@@ -7,16 +7,15 @@ class Object;
 class Request {
 public:
 	int id;
-	int object_id = 0; //����������id
-	int object_size = 0; //����������Ĵ�С
-	int rest_block_num = 0; //����ʣ��������
-	bool is_deleted = false; //�Ƿ�ɾ��
+	int object_id = 0;
+	int object_size = 0; 
+	int rest_block_num = 0; 
+	bool is_deleted = false;
 	static int cnt;
 	Request() {
 		id = cnt++;
 	}
 
-	// ������ɾ��
 	void deleted() {
 		object_id = 0;
 		object_size = 0;
