@@ -85,19 +85,25 @@ public:
         ma.erase(oj_id);
     }
 
-    // 检查标签是否在这个磁盘中有固定块，且够存
-    std::pair<int,int> check_tag(int tag,int oj_size) {
+    // 返回这个磁盘中的多个够存固定块、、后续检查是否连续
+    std::vector<std::pair<int, int>> check_tag(int tag, int oj_size) {
+        std::vector<std::pair<int, int>> ans;
+
+        // 对每个固定块进行检查
         for (int i = 1; i <= DISK_BLOCK_GU - 1; i++) {
+
+            // 是这个标签，而且至少有size个空块才有机会
             if (disk_block_gu[i].tag == tag) {
                 if (disk_block_gu[i].empty_num < oj_size) {
                     continue;
                 }
-                return { disk_block_gu[i].first_point,i };
+
+                //return { disk_block_gu[i].first_point,i };
+                ans.push_back({ disk_block_gu[i].first_point,i });
             }
         }
-        return {0,0};
+        return ans;
     }
-
 
     // 这个磁盘想要写空块，有没有机会写
     std::pair<int,int> disk_want_write_gu(int tag,int oj_size) {

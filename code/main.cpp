@@ -50,6 +50,7 @@ void delete_action()
 
 
 // 写入位置操作
+// 第id对象，尺寸大小为size，其第j个副本，写入到第dk_id个磁盘，从first_empty开始写
 void do_write(int id,int size,int j,int dk_id,int first_empty) {
     printf("%d", dk_id);
     // 寻找收集具体插入的位置
@@ -71,27 +72,53 @@ void do_write(int id,int size,int j,int dk_id,int first_empty) {
     }
 }
 
+// 检查第dk_id个磁盘，其第pos个位置，是否有size个连续空间
+int check_tag_is_lian(int dk_id, int pos, int size) {
+
+    bool ok = true;
+    for (int i = 0; i < size; i++) {
+        int j = pos + i;
+        if (j > V) j -= V;
+        ok = ok && (!unit[dk_id][j].is_exist);
+        if (!ok) {
+            return false;
+        }
+    }
+    return true;
+}
 
 // 检查一个标签是否有过固定块,并且固定块能装下
+// tag对象的标签，size对象的大小，first_empty和first_empty_block使用引用为了传递多参数，is_hava_copy是记录其他副本的位置
 int check_tag_is_exixt(int tag, int size, int& first_empty, int& first_empty_block, bool is_have_copy[]) {
     for (int i = 1; i <= MAX_DISK_NUM - 1; i++) {
 
         // 同一个对象的副本不能再在一个磁盘
         if (is_have_copy[i]) continue;
-        auto [new_first_empty, new_first_empty_block] = disk[i].check_tag(tag, size);
-        first_empty = new_first_empty;
-        first_empty_block = new_first_empty_block;
-        if (first_empty && first_empty_block) {
-            return i;
+        std::vector<std::pair<int,int>> ans = disk[i].check_tag(tag, size);
+
+        // 对每个相同标签的磁盘块进行查看，是否有连续的块
+        for (auto [new_first_empty, new_first_empty_block] : ans) {
+
+            // 看当前磁盘是否有连续空块
+            // 从该磁盘块的起始位置，长度就是该磁盘块的长度，但是必须保证连续区域都在磁盘块内
+            for (int j = new_first_empty; j < new_first_empty + disk[i].disk_block_gu[new_first_empty_block].size - size + 1; j++) {
+
+                // 找到了直接给我返回,是第几个磁盘，同时更新其传的参数
+                if (check_tag_is_lian(i, j, size)) {
+                    first_empty = new_first_empty;
+                    first_empty_block = new_first_empty_block;
+                    return i;
+                }
+            }
         }
     }
     return 0;
 }
 
+
 void write_action()
 {
     int n_write;
-
     // 同一个对象的副本不能存同一个磁盘
     bool is_have_copy[MAX_DISK_NUM] = { 0 };
     scanf("%d", &n_write);
@@ -100,28 +127,33 @@ void write_action()
         scanf("%d%d%d", &id, &size, &tag);
         object[id].set(size, tag);
 
-        // 打印对象编号
+        // 打印对象编号，开始找这个对象
         printf("%d\n", id);
-
         memset(is_have_copy, 0, sizeof(is_have_copy));
 
-        // 前两个副本存固定块
-        for (int j = 1; j <= REP_NUM - 1; j++) {
+        // 三个副本都尽量存固定块
+        for (int j = 1; j <= REP_NUM; j++) {
 
+            // 开始找第一个副本，是不是存过啊？
             int first_empty = 0, first_empty_block = 0;
-
             int dk_id = check_tag_is_exixt(tag, size,first_empty, first_empty_block, is_have_copy);
 
-            // 没有出现过找第一个空块
+            // dk_id==0，那就是没有出现过，找第一个空块
             if (!dk_id) {
+
+                // 先随机一个磁盘id
                 dk_id = (id + j) % N + 1;
-                // 找到可以插入的磁盘id
+
+                // 找到可以插入的磁盘块
                 auto [new_first_empty, new_first_empty_block] = disk[dk_id].disk_want_write_gu(tag, size);
                 first_empty = new_first_empty;
                 first_empty_block = new_first_empty_block;
+
                 int temp_cnt = 1;
                 // 一直找，最多10次
                 while (!first_empty_block || is_have_copy[dk_id]) {
+
+                    // 下一个
                     dk_id = (dk_id % N) + 1;
                     temp_cnt++;
                     auto [new_first_empty, new_first_empty_block] = disk[dk_id].disk_want_write_gu(tag, size);
@@ -132,19 +164,43 @@ void write_action()
                     }
                     //assert(temp_cnt < MAX_DISK_NUM + 10);
                 }
-
-
             }
+
+            // 还是找不到
+            // 找随机区域的连续
             if (first_empty_block == 0 || is_have_copy[dk_id]) {
                 dk_id = id % N + 1;
                 int temp_cnt = 1;
+                bool ok = false;
                 first_empty = disk[dk_id].disk_want_write_sui(size);
-                while (!first_empty || is_have_copy[dk_id]) {
-                    dk_id = dk_id % N + 1;
-                    temp_cnt++;
-                    first_empty = disk[dk_id].disk_want_write_sui(size);
-                    assert(temp_cnt < MAX_DISK_NUM + 10);
+           
+                // 一定要找到连续的
+                while (!ok) {
+
+                    // 先让dk_id满足
+                    while (!first_empty || is_have_copy[dk_id]) {
+                        dk_id = dk_id % N + 1;
+                        temp_cnt++;
+                        first_empty = disk[dk_id].disk_want_write_sui(size);
+                        assert(temp_cnt < MAX_DISK_NUM + 10);
+                    }
+
+
+                    for (int k = first_empty; k < first_empty + disk[dk_id].disk_block_sui.size - size + 1; k++) {
+                        if (check_tag_is_lian(dk_id, k, size)) {
+                            first_empty = k;
+                            ok = true;
+                            break;
+                        }
+                    }
+                    // 不OK继续下一个
+                    if (!ok) {
+                        dk_id = dk_id % N + 1;
+                        temp_cnt++;
+                        first_empty = disk[dk_id].disk_want_write_sui(size);
+                    }
                 }
+
                 disk[dk_id].add_object_sui(id, size);
                 is_have_copy[dk_id] = true;
                 do_write(id, size, j, dk_id, first_empty);
@@ -160,22 +216,22 @@ void write_action()
 
         }
 
-        // 是否有副本块放到随机区域
-        for (int j = 3; j <= REP_NUM; j++) {
-            int dk_id = id % N + 1;
-            int temp_cnt = 1;
-            int first_empty = disk[dk_id].disk_want_write_sui(size);
-            while (!first_empty || is_have_copy[dk_id]) {
-                dk_id = dk_id % N + 1;
-                temp_cnt++;
-                first_empty = disk[dk_id].disk_want_write_sui(size);
-                assert(temp_cnt < MAX_DISK_NUM + 10);
-            }
-            disk[dk_id].add_object_sui(id, size);
-            is_have_copy[dk_id] = true;
-            do_write(id, size, j, dk_id, first_empty);
-            printf("\n");
-        }
+        //// 是否有副本块放到随机区域
+        //for (int j = 4; j <= REP_NUM; j++) {
+        //    int dk_id = id % N + 1;
+        //    int temp_cnt = 1;
+        //    int first_empty = disk[dk_id].disk_want_write_sui(size);
+        //    while (!first_empty || is_have_copy[dk_id]) {
+        //        dk_id = dk_id % N + 1;
+        //        temp_cnt++;
+        //        first_empty = disk[dk_id].disk_want_write_sui(size);
+        //        assert(temp_cnt < MAX_DISK_NUM + 10);
+        //    }
+        //    disk[dk_id].add_object_sui(id, size);
+        //    is_have_copy[dk_id] = true;
+        //    do_write(id, size, j, dk_id, first_empty);
+        //    printf("\n");
+        //}
     }
 
     fflush(stdout);
