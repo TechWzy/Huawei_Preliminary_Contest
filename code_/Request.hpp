@@ -6,16 +6,12 @@ class Object;
 
 class Request {
 public:
-	
 	int id;
-	int object_id = 0; 
-	int object_size = 0;
-	int rest_block_num = 0;
-	int ocur_time = 0;
+	int object_id = 0;
+	int object_size = 0; 
+	int rest_block_num = 0; 
 	bool is_deleted = false;
 	static int cnt;
-	bool vis[MAX_OBJECT_SIZE];
-	
 	Request() {
 		id = cnt++;
 	}
@@ -31,7 +27,7 @@ public:
 		object_id = oj_id;
 		object_size = oj_size;
 		rest_block_num = oj_size;
-		ocur_time = current_time();
+
 		is_deleted = false;
 	}
 	
@@ -51,3 +47,6 @@ public:
 };
 
 int Request::cnt = 0;
+
+
+

@@ -1,3 +1,4 @@
+<<<<<<< Updated upstream
 code/out
 .vs
 .vscode
@@ -17,4 +18,17 @@ resources/log/code_craft.log
 code/Block5.zip
 code/block6.zip
 code.zip
-code_
+code copy
+best
+
+info
+code_Genetic
+outdated_request.txt
+tag_activation.txt
+result.txt
+code_gan
+data/~$标签分布.xlsx
+code2
+=======
+/replay
+>>>>>>> Stashed changes

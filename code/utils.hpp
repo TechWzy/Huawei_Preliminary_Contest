@@ -21,12 +21,8 @@ extern int T, M, N, V, G;
 // 存每1800时间片的全部操作的数量
 extern int global_state[3 * MAX_TAG_NUM][MAX_REQUEST_NUM / FRE_PER_SLICING + 10];
 
-
-
 void put_ok()
 {
 	printf("OK\n");
 	fflush(stdout);
 }
-
-
