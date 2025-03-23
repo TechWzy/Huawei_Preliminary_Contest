@@ -17,7 +17,6 @@ public:
 	}
 
 	void deleted() {
-
 		is_exist = false;
 		object_id = 0;
 		block_order = 0;

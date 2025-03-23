@@ -76,7 +76,7 @@ void write_action()
             
             auto [_, disk_id, first_block] = tag_block.back();
             tag_block.pop_back();
-            if(is_occupied[disk_id]) {
+            if(is_occupied[disk_id]) {   
                 continue ;
             }
 
@@ -135,6 +135,10 @@ void write_action()
 std::vector<int> do_read(int dk_id) {
     std::vector<int> complete_id;
     int pos = disk[dk_id].point;
+
+    // 当前单元无对象块直接返回空块
+    if (!unit[dk_id][pos].is_exist) return complete_id;
+
     int oj_id = unit[dk_id][pos].object_id;
     int bk_id = unit[dk_id][pos].block_order;
     std::set<int> temp_set = block[oj_id][bk_id].requested_id_block;

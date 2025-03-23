@@ -6,7 +6,6 @@
 #include "Unit.hpp"
 #include "Request.hpp"
 #include "Object.hpp"
-
 extern Unit unit[MAX_DISK_NUM][MAX_DISK_SIZE];
 extern Request request[MAX_REQUEST_NUM];
 extern Disk disk[MAX_DISK_NUM];

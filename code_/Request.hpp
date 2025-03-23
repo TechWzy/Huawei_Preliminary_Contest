@@ -12,6 +12,8 @@ public:
 	int rest_block_num = 0; 
 	bool is_deleted = false;
 	static int cnt;
+
+	// 保证序号从1开始
 	Request() {
 		id = cnt++;
 	}

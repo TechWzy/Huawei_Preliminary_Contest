@@ -2,8 +2,6 @@
 #pragma GCC optimize("O2")
 #include "utils.hpp"
 
-
-
 class Unit {
 public:
 	int disk_id; 
@@ -17,9 +15,8 @@ public:
 		id = cnt % MAX_DISK_SIZE;
 		cnt++;
 	}
-	//当前单元上的块被删除
-	void deleted() {
 
+	void deleted() {
 		is_exist = false;
 		object_id = 0;
 		block_order = 0;
@@ -30,11 +27,6 @@ public:
 		object_id = oj_id;
 		block_order = bk_order;
 	}
-
-
 };
 
 int Unit::cnt = 0;
-
-
-

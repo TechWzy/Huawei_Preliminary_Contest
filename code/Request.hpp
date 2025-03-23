@@ -7,16 +7,17 @@ class Object;
 class Request {
 public:
 	int id;
-	int object_id = 0; //所请求对象的id
-	int object_size = 0; //所请求对象块的大小
-	int rest_block_num = 0; //所需剩余块的数量
-	bool is_deleted = false; //是否被删除
+	int object_id = 0;
+	int object_size = 0; 
+	int rest_block_num = 0; 
+	bool is_deleted = false;
 	static int cnt;
+
+	// 保证序号从1开始
 	Request() {
 		id = cnt++;
 	}
 
-	// 该请求被删除
 	void deleted() {
 		object_id = 0;
 		object_size = 0;

@@ -1,10 +1,5 @@
 #pragma once
-#include "utils.hpp"
-#include "Block.hpp"
-#include "Disk.hpp"
-#include "Unit.hpp"
-#include "Request.hpp"
-#include "Object.hpp"
+#include"operation.hpp"
 
 Unit unit[MAX_DISK_NUM][MAX_DISK_SIZE];
 Request request[MAX_REQUEST_NUM];
@@ -29,7 +24,7 @@ void delete_action()
     int n_delete;
     int abort_num = 0;
     static int _id[MAX_OBJECT_NUM];
-    std::set<int> abort_set; // ¼ÇÂ¼É¾³ı¼¯ºÏ
+    std::set<int> abort_set;
     scanf("%d", &n_delete);
     for (int i = 1; i <= n_delete; i++) {
         scanf("%d", &_id[i]);
@@ -49,217 +44,113 @@ void delete_action()
 }
 
 
-// Ğ´ÈëÎ»ÖÃ²Ù×÷
-// µÚid¶ÔÏó£¬³ß´ç´óĞ¡Îªsize£¬ÆäµÚj¸ö¸±±¾£¬Ğ´Èëµ½µÚdk_id¸ö´ÅÅÌ£¬´Ófirst_empty¿ªÊ¼Ğ´
-void do_write(int id,int size,int j,int dk_id,int first_empty) {
+void do_write(int oid,int size,int copy_id, int dk_id, vector<int>block_pos) {
     printf("%d", dk_id);
-    // Ñ°ÕÒÊÕ¼¯¾ßÌå²åÈëµÄÎ»ÖÃ
-    int curcurrent_write_num = 0;
-    std::vector<int> block_pos;
-    for (int k = first_empty; k <= V; k++) {
-        if (!unit[dk_id][k].is_exist) {
-            // ¸üĞÂµ¥Ôª×´Ì¬
-            printf(" %d", k);
-            unit[dk_id][k].add_block(id, ++curcurrent_write_num);
-            block_pos.push_back(k);
-        }
-        if (curcurrent_write_num == size) {
-
-            // ½«Î»ÖÃ±£´æµ½¶ÔÏóÖĞ
-            object[id].set_pos(j, block_pos, dk_id);
-            break;
-        }
+    for(int i = 0;i < block_pos.size();i++) {
+        printf(" %d", block_pos[i]);
+        unit[dk_id][block_pos[i]].add_block(oid, i + 1);
     }
+    object[oid].set_pos(copy_id, block_pos, dk_id);
 }
-
-// ¼ì²éµÚdk_id¸ö´ÅÅÌ£¬ÆäµÚpos¸öÎ»ÖÃ£¬ÊÇ·ñÓĞsize¸öÁ¬Ğø¿Õ¼ä
-int check_tag_is_lian(int dk_id, int pos, int size) {
-
-    bool ok = true;
-    for (int i = 0; i < size; i++) {
-        int j = pos + i;
-        if (j > V) j -= V;
-        ok = ok && (!unit[dk_id][j].is_exist);
-        if (!ok) {
-            return false;
-        }
-    }
-    return true;
-}
-
-// ¼ì²éÒ»¸ö±êÇ©ÊÇ·ñÓĞ¹ı¹Ì¶¨¿é,²¢ÇÒ¹Ì¶¨¿éÄÜ×°ÏÂ
-// tag¶ÔÏóµÄ±êÇ©£¬size¶ÔÏóµÄ´óĞ¡£¬first_emptyºÍfirst_empty_blockÊ¹ÓÃÒıÓÃÎªÁË´«µİ¶à²ÎÊı£¬is_hava_copyÊÇ¼ÇÂ¼ÆäËû¸±±¾µÄÎ»ÖÃ
-int check_tag_is_exixt(int tag, int size, int& first_empty, int& first_empty_block, bool is_have_copy[]) {
-    for (int i = 1; i <= MAX_DISK_NUM - 1; i++) {
-
-        // Í¬Ò»¸ö¶ÔÏóµÄ¸±±¾²»ÄÜÔÙÔÚÒ»¸ö´ÅÅÌ
-        if (is_have_copy[i]) continue;
-        std::vector<std::pair<int,int>> ans = disk[i].check_tag(tag, size);
-
-        // ¶ÔÃ¿¸öÏàÍ¬±êÇ©µÄ´ÅÅÌ¿é½øĞĞ²é¿´£¬ÊÇ·ñÓĞÁ¬ĞøµÄ¿é
-        for (auto [new_first_empty, new_first_empty_block] : ans) {
-
-            // ¿´µ±Ç°´ÅÅÌÊÇ·ñÓĞÁ¬Ğø¿Õ¿é
-            // ´Ó¸Ã´ÅÅÌ¿éµÄÆğÊ¼Î»ÖÃ£¬³¤¶È¾ÍÊÇ¸Ã´ÅÅÌ¿éµÄ³¤¶È£¬µ«ÊÇ±ØĞë±£Ö¤Á¬ĞøÇøÓò¶¼ÔÚ´ÅÅÌ¿éÄÚ
-            for (int j = new_first_empty; j < new_first_empty + disk[i].disk_block_gu[new_first_empty_block].size - size + 1; j++) {
-
-                // ÕÒµ½ÁËÖ±½Ó¸øÎÒ·µ»Ø,ÊÇµÚ¼¸¸ö´ÅÅÌ£¬Í¬Ê±¸üĞÂÆä´«µÄ²ÎÊı
-                if (check_tag_is_lian(i, j, size)) {
-                    first_empty = new_first_empty;
-                    first_empty_block = new_first_empty_block;
-                    return i;
-                }
-            }
-        }
-    }
-    return 0;
-}
-
 
 void write_action()
 {
     int n_write;
-    // Í¬Ò»¸ö¶ÔÏóµÄ¸±±¾²»ÄÜ´æÍ¬Ò»¸ö´ÅÅÌ
-    bool is_have_copy[MAX_DISK_NUM] = { 0 };
     scanf("%d", &n_write);
+
     for (int i = 1; i <= n_write; i++) {
+
         int id, size, tag;
         scanf("%d%d%d", &id, &size, &tag);
         object[id].set(size, tag);
-
-        // ´òÓ¡¶ÔÏó±àºÅ£¬¿ªÊ¼ÕÒÕâ¸ö¶ÔÏó
         printf("%d\n", id);
-        memset(is_have_copy, 0, sizeof(is_have_copy));
+        
+        int xth = 1;
+        std::vector<bool>is_occupied(N + 1);
 
-        // Èı¸ö¸±±¾¶¼¾¡Á¿´æ¹Ì¶¨¿é
-        for (int j = 1; j <= REP_NUM; j++) {
-
-            // ¿ªÊ¼ÕÒµÚÒ»¸ö¸±±¾£¬ÊÇ²»ÊÇ´æ¹ı°¡£¿
-            int first_empty = 0, first_empty_block = 0;
-            int dk_id = check_tag_is_exixt(tag, size,first_empty, first_empty_block, is_have_copy);
-
-            // dk_id==0£¬ÄÇ¾ÍÊÇÃ»ÓĞ³öÏÖ¹ı£¬ÕÒµÚÒ»¸ö¿Õ¿é
-            if (!dk_id) {
-
-                // ÏÈËæ»úÒ»¸ö´ÅÅÌid
-                dk_id = (id + j) % N + 1;
-
-                // ÕÒµ½¿ÉÒÔ²åÈëµÄ´ÅÅÌ¿é
-                auto [new_first_empty, new_first_empty_block] = disk[dk_id].disk_want_write_gu(tag, size);
-                first_empty = new_first_empty;
-                first_empty_block = new_first_empty_block;
-
-                int temp_cnt = 1;
-                // Ò»Ö±ÕÒ£¬×î¶à10´Î
-                while (!first_empty_block || is_have_copy[dk_id]) {
-
-                    // ÏÂÒ»¸ö
-                    dk_id = (dk_id % N) + 1;
-                    temp_cnt++;
-                    auto [new_first_empty, new_first_empty_block] = disk[dk_id].disk_want_write_gu(tag, size);
-                    first_empty = new_first_empty;
-                    first_empty_block = new_first_empty_block;
-                    if (temp_cnt > MAX_DISK_NUM + 10) {
-                        break;
-                    }
-                    //assert(temp_cnt < MAX_DISK_NUM + 10);
-                }
+        //  1. å¯»æ‰¾å›ºå®šå—.
+        auto tag_block = check_tag(tag, size);
+        //  std::sort(tag_block.rbegin(), tag_block.rend());    //  ä¼˜å…ˆä½¿ç”¨å‰©ä½™å—è¾ƒå°‘çš„å›ºå®šå—
+        
+        while(tag_block.size() && xth <= 3) {
+            
+            auto [_, disk_id, first_block] = tag_block.back();
+            tag_block.pop_back();
+            if(is_occupied[disk_id]) {   
+                continue ;
             }
 
-            // »¹ÊÇÕÒ²»µ½
-            // ÕÒËæ»úÇøÓòµÄÁ¬Ğø
-            if (first_empty_block == 0 || is_have_copy[dk_id]) {
-                dk_id = id % N + 1;
-                int temp_cnt = 1;
-                bool ok = false;
-                first_empty = disk[dk_id].disk_want_write_sui(size);
-           
-                // Ò»¶¨ÒªÕÒµ½Á¬ĞøµÄ
-                while (!ok) {
+            is_occupied[disk_id] = true;
+            const auto& dk = disk[disk_id].disk_block_gu[first_block];
+            auto [block_pos, tar] = get_continuos_unit(disk_id, dk.first_point, dk.first_point + dk.size - 1, size);
 
-                    // ÏÈÈÃdk_idÂú×ã
-                    while (!first_empty || is_have_copy[dk_id]) {
-                        dk_id = dk_id % N + 1;
-                        temp_cnt++;
-                        first_empty = disk[dk_id].disk_want_write_sui(size);
-                        assert(temp_cnt < MAX_DISK_NUM + 10);
-                    }
+            do_write(id, size, xth, disk_id, block_pos);
+            printf("\n");
+            xth += 1;
 
-
-                    for (int k = first_empty; k < first_empty + disk[dk_id].disk_block_sui.size - size + 1; k++) {
-                        if (check_tag_is_lian(dk_id, k, size)) {
-                            first_empty = k;
-                            ok = true;
-                            break;
-                        }
-                    }
-                    // ²»OK¼ÌĞøÏÂÒ»¸ö
-                    if (!ok) {
-                        dk_id = dk_id % N + 1;
-                        temp_cnt++;
-                        first_empty = disk[dk_id].disk_want_write_sui(size);
-                    }
-                }
-
-                disk[dk_id].add_object_sui(id, size);
-                is_have_copy[dk_id] = true;
-                do_write(id, size, j, dk_id, first_empty);
-                printf("\n");
-            }
-            else {
-                is_have_copy[dk_id] = true;
-                // ¸üĞÂ´ÅÅÌ²¢Ğ´Èë
-                disk[dk_id].add_object_gu(id, size, tag, first_empty_block);
-                do_write(id, size, j, dk_id, first_empty);
-                printf("\n");
-            }
-
+            disk[disk_id].add_object_gu(id, size, tag, first_block);
         }
 
-        //// ÊÇ·ñÓĞ¸±±¾¿é·Åµ½Ëæ»úÇøÓò
-        //for (int j = 4; j <= REP_NUM; j++) {
-        //    int dk_id = id % N + 1;
-        //    int temp_cnt = 1;
-        //    int first_empty = disk[dk_id].disk_want_write_sui(size);
-        //    while (!first_empty || is_have_copy[dk_id]) {
-        //        dk_id = dk_id % N + 1;
-        //        temp_cnt++;
-        //        first_empty = disk[dk_id].disk_want_write_sui(size);
-        //        assert(temp_cnt < MAX_DISK_NUM + 10);
-        //    }
-        //    disk[dk_id].add_object_sui(id, size);
-        //    is_have_copy[dk_id] = true;
-        //    do_write(id, size, j, dk_id, first_empty);
-        //    printf("\n");
-        //}
+        if(xth > 3) {
+            continue;
+        }
+        
+        //  2.å¼€è¾Ÿå›ºå®šå—
+        while(xth <= 3) {
+            auto [disk_id, first_block]  = get_empty_block(tag, is_occupied);
+            if(disk_id == 0) break;
+            is_occupied[disk_id] = true;
+            const auto& dk = disk[disk_id].disk_block_gu[first_block];
+            auto [block_pos, tar] = get_continuos_unit(disk_id, dk.first_point, dk.first_point + dk.size - 1, size);
+
+            do_write(id, size, xth, disk_id, block_pos);
+            printf("\n");
+            xth += 1;
+            disk[disk_id].add_object_gu(id, size, tag, first_block);
+        }
+
+        if(xth > 3) {
+            continue;
+        }
+
+        //  3.å¯»æ‰¾éšæœºå—
+        for(int i = 1;i <= N && xth <= 3;i++) {
+            auto& dk = disk[i].disk_block_sui;
+            if(is_occupied[i] == false && dk.empty_num >= size) {
+                is_occupied[i] = true;
+                auto [block_pos, tar] = get_continuos_unit(i, dk.first_point, dk.first_point + dk.size - 1, size);
+                do_write(id, size, xth, i, block_pos);
+                printf("\n");
+                xth += 1;
+                disk[i].add_object_sui(id, size);
+            }
+        }
+
+        //  4.æ²¡åŠæ³•äº†ï¼Œè°ƒå‚å§.
     }
-
+    
     fflush(stdout);
-}
-
-// ¼ì²é´ÅÅÌÎ»ÖÃÊÇ·ñÓĞ¼ÛÖµ
-bool check_value(int dk_id , int pos)
-{
-    int oj_id = unit[dk_id][pos].object_id;
-    int bk_id = unit[dk_id][pos].block_order;
-    return block[oj_id][bk_id].check();
 }
 
 std::vector<int> do_read(int dk_id) {
     std::vector<int> complete_id;
     int pos = disk[dk_id].point;
-    int oj_id = unit[dk_id][pos].object_id;
-    int bk_id = unit[dk_id][pos].block_order;
-    std::set<int> temp_set = block[oj_id][bk_id].requested_id_block;
-    for (int rq_id : temp_set) {
 
-        // ¼ì²é¿ÉÄÜÍê³ÉµÄÇëÇóÃ¿Ò»´Î
-        if (request[rq_id].readed(bk_id)) {
-            complete_id.push_back(rq_id);
-            object[oj_id].requested_id.erase(rq_id);
+    // å½“å‰å•å…ƒæ— å¯¹è±¡å—ç›´æ¥è¿”å›ç©ºå—
+
+    if (unit[dk_id][pos].is_exist) {
+        int oj_id = unit[dk_id][pos].object_id;
+        int bk_id = unit[dk_id][pos].block_order;
+        std::set<int> temp_set = block[oj_id][bk_id].requested_id_block;
+        for (int rq_id : temp_set) {
+            if (request[rq_id].readed(bk_id)) {
+                complete_id.push_back(rq_id);
+                object[oj_id].requested_id.erase(rq_id);
+            }
+            block[oj_id][bk_id].requested_id_block.erase(rq_id);
         }
-        block[oj_id][bk_id].requested_id_block.erase(rq_id);
     }
+
     disk[dk_id].point = (disk[dk_id].point % V) + 1;
     disk[dk_id].last_point_status = READ;
     printf("r");
@@ -274,15 +165,11 @@ void read_action()
     scanf("%d", &n_read);
     for (int i = 1; i <= n_read; i++) {
         scanf("%d%d", &request_id, &object_id);
-
-        // Ìí¼Ó²¢´´½¨ÇëÇó
         object[object_id].add_request(request_id);
     }
     int complete = 0;
     std::vector<int> complete_id;
     for (int i = 1; i <= N; i++) {
-
-        // µÚÒ»²¨¼ì²é£¬²é¿´¶Á¹Ì»¹ÊÇ¶ÁËæ
         int j;
         bool ok = false;
         for (j = 0; j < G; j++) {
@@ -294,10 +181,8 @@ void read_action()
             }
         }
 
-        // ¸Ã´ÅÅÌÃ»»ú»á¶ÁÁË
+        bool flag = false;
         if (ok == false) {
-            // ¼ì²é¸Ã´ÅÅÌÊÇ·ñÓĞÓĞ¼ÛÖµµÄ¿é£¬Èç¹ûÓĞjump¹ıÈ¥
-            // Ã»ÓĞ¸Ã´ÅÅÌÂÔ¹ı
             bool exist_value = false;
             int k;
             for (k = 1; k <= V; k++)
@@ -315,14 +200,20 @@ void read_action()
                 disk[i].last_point_status = JUMP;
             }
             else {
-                // Ã¿¼ÛÖµ¾Í²»¶¯
                 printf("#\n");
                 fflush(stdout);
             }
         }
-        else { // ¸Ã´ÅÅÌÓĞ»ú»á¶Á£¬×¼±¸°ÑtokensÏûºÄÍê°É
+        else { 
             while (disk[i].rest_tokens > 0) {
-                while (disk[i].rest_tokens > 0 && !check_value(i, disk[i].point)) {
+                if(!check_value(i, disk[i].point)) {
+                    if(!flag) {
+                        flag = predict(i);
+                    }
+                } else {
+                    flag = false;
+                }
+                while (disk[i].rest_tokens > 0 && !check_value(i, disk[i].point) && !flag) {
                     disk[i].last_point_status = PASS;
                     disk[i].rest_tokens--;
                     disk[i].last_take_tokens = 1;
@@ -368,29 +259,19 @@ void read_action()
 
 int main()
 {
-    // ´ò¿ª.inÎÄ¼ş²¢½«±ê×¼ÊäÈëÖØ¶¨Ïòµ½¸ÃÎÄ¼ş
-    
-    /*
-    if (freopen("..//data//sample_practice.in", "r", stdin) == nullptr) {
-        // Èç¹ûÎÄ¼ş´ò¿ªÊ§°Ü£¬Êä³ö´íÎóĞÅÏ¢²¢·µ»Ø1
-        perror("ÎŞ·¨´ò¿ªÎÄ¼ş");
-        return 1;
-    }
-    //*/
-    
-
 
     scanf("%d%d%d%d%d", &T, &M, &N, &V, &G);
    
     for (int i = 1; i <= N; i++) {
         disk[i].set(V, G);
     }
-    //¶ÁÈ¡È«¾Ö×´Ì¬
+
     for (int i = 1; i <= 3 * M; i++) {
         for (int j = 1; j <= (T - 1) / FRE_PER_SLICING + 1; j++) {
             scanf("%d", &global_state[i][j]);
         }
     }
+
     put_ok();
     for (int t = 1; t <= T + EXTRA_TIME; t++) {
         timestamp_action();
@@ -398,13 +279,5 @@ int main()
         write_action();
         read_action();
     }
-
-    // ¹Ø±ÕÎÄ¼ş²¢½«±ê×¼ÊäÈë»Ö¸´µ½Ä¬ÈÏµÄ¼üÅÌÊäÈë
-    /*
-    if (fclose(stdin) != 0) {
-        perror("ÎŞ·¨¹Ø±ÕÎÄ¼ş");
-        return 1;
-    }
-    //*/
     return 0;
 }
