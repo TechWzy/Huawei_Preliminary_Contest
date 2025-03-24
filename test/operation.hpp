@@ -172,6 +172,10 @@ info get_empty_block(int tag, int size, const vector<bool>& is_occupied) {
             if(R - L + 1 >= size) {
                 Seg.push_back({L, R});
             }
+            ls = r;
+        }
+        if(ls < V && V - ls >= size) {
+            Seg.push_back({ls + 1, V});
         }
         for(int j = 1;j < Seg.size();j++) {
             if(Seg[j][0] == Seg[j - 1][1] + 1) {
@@ -190,6 +194,10 @@ info get_empty_block(int tag, int size, const vector<bool>& is_occupied) {
             if(R - L + 1 >= size) {
                 return info {i, L, R};
             }
+            ls = r;
+        }
+        if(V - ls >= size) {
+            return info {i, ls + 1, V};
         }
     }
 

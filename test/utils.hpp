@@ -30,6 +30,8 @@ extern int T, M, N, V, G;
 extern int global_state[3 * MAX_TAG_NUM][MAX_REQUEST_NUM / FRE_PER_SLICING + 10];
 extern int is_activated[MAX_TAG_NUM][MAX_REQUEST_NUM / FRE_PER_SLICING + 10];
 
+ofstream file("err.txt");
+
 enum Type { Delete, Write, Read };
 
 /*

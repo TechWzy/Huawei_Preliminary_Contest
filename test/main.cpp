@@ -80,7 +80,7 @@ void write_action()
         //  1.优先写入 large_block
         {
             int index = Is_LargeBlock_available(tag_allocation[tag], tag, size);
-            if(!index) {
+            if(index) {
                 auto& dk = disk[tag_allocation[tag]];
                 auto& bl = dk.block[index];
                 auto [block_pos, tar] = get_continuos_unit(tag_allocation[tag], bl.first_point, bl.first_point + bl.size - 1, size);
@@ -119,11 +119,20 @@ void write_action()
             auto [disk_id, l, r] = get_empty_block(tag, size, is_occupied);
             if(!disk_id) break;
             
+            int L = l, R = std::min(V, l + small_block_size - 1);
             //  分配标签块
-            auto flag = disk[disk_id].allocate_block(l, r, tag);
+            auto flag = disk[disk_id].allocate_block(L, R, tag);
+
+            if(flag == false) {
+                file<<"cl cr disk "<<L<<" "<<R<<" "<<disk_id<<endl;
+                for(auto [l, r, _] : disk[disk_id].infos) {
+                    file<<l<<" "<<r<<endl;
+                }
+                file.close();
+            }
             assert(flag == true);
 
-            auto [block_pos, tar] = get_continuos_unit(disk_id, l, r, size);
+            auto [block_pos, tar] = get_continuos_unit(disk_id, L, R, size);
             do_write(id, size, xth, disk_id, block_pos);
             is_occupied[disk_id] = 1;
             printf("\n");
@@ -134,6 +143,7 @@ void write_action()
         if(xth > 3) continue;
 
         //  4.没办法了，调参吧.
+        assert(xth > 3);
     }
     
     fflush(stdout);
@@ -269,7 +279,6 @@ void init() {
         }
     }
 
-
     for(int i = 1;i <= M;i++) {
         for(int j = total;j >= 1;j--) {
             WriteIn[i][j] = WriteIn[i][j + 1] + Get_global_info(Write, i, j);
@@ -278,8 +287,12 @@ void init() {
 
     std::vector<std::array<int, 2>>Pre_allocation;
     for(int i = 1;i <= M;i++) {
-        int need = ((WriteIn[i][1] * large_block_init_ratio - 1) / 100 + 1) * 100;
+        int need = ((int)(WriteIn[i][1] * large_block_init_ratio - 1) / 100 + 1) * 100;
         Pre_allocation.push_back({need, i});
+    }
+
+    for(int i = 1;i <= N;i++) {
+        disk[i].set(V, i);
     }
 
     //  确保 need <= V， 否则需要重新制定策略.
@@ -292,7 +305,7 @@ void init() {
         int L = 0, R = 0;
         for(auto [l, r] : avail) {
             if(r - l + 1 >= need) {
-                L = l, R = r;
+                L = l, R = l + need - 1;
                 break;
             }
         }
@@ -320,6 +333,7 @@ void update_block_action() {
         }
     }
 
+    file<<"update_block_action part1"<<endl;
 }
 
 int main()
@@ -344,5 +358,7 @@ int main()
         write_action();
         read_action();
     }
+
+    file.close();
     return 0;
 }
