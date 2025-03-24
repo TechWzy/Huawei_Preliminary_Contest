@@ -38,10 +38,11 @@ public:
 
 class Disk {
 public:
-
+    
     int blockIndex = 0;
     int id = 0;
     int size = 0;
+    int empty_num = 0;
     int point = 1;
     int rest_tokens = 0;
     int last_take_tokens = 0;
@@ -55,6 +56,7 @@ public:
     void set(int V, int id) {
         this->id = id;
         this->size = V;
+        this->empty_num = V;
     }
 
     //  获取该点所处的动态块
@@ -143,6 +145,7 @@ public:
     }
 
     void delete_unit(int position) {
+        empty_num += 1;
         auto [L, R, Index] = Get_block_info(position);
         if(L != 0 && block.count(Index)) {
             block[Index].delete_unit();
@@ -150,6 +153,7 @@ public:
     }
 
     void add_unit(int position) {
+        empty_num -= 1;
         auto [L, R, Index] = Get_block_info(position);
         assert(L != 0 && block.count(Index) > 0);
         block[Index].add_unit();

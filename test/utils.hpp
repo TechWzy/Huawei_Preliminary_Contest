@@ -35,24 +35,27 @@ ofstream file("err.txt");
 enum Type { Delete, Write, Read };
 
 /*
-	获取两个标签在 xth 时刻过后的冲突程度.
+	获取两个标签在 xth 时刻过后的相似程度.
 */
 
-double Get_Conflict_Level(int x, int y, int xth) {
+double Get_Similar_Level(int x, int y, int cur_time) {
 
 	if(x == y) {
 		return 0.0;
 	}
 
+	const int xth = (cur_time - 1) / FRE_PER_SLICING + 1;
 	const int total = (T - 1) / FRE_PER_SLICING + 1;
 	double sum = 0.0, v = 0.0;
 
 	for(int i = xth;i <= total;i++) {
 		sum += 1;
-		v += (is_activated[x][i] & is_activated[y][i]);
+		if(is_activated[x][i] == is_activated[y][i]) {
+			v += 1;
+		}
 	}
 
-	return (v / sum);
+	return (1.0 * v / sum);
 } 
 
 int Get_global_info(Type op, int tag, int xth) {

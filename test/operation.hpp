@@ -59,7 +59,7 @@ int Is_LargeBlock_available(int disk_id, int tag, int size) {
     
     auto& dk = disk[disk_id];
     for(auto [l, r, index] : dk.infos) {
-        if(dk.block[index].Is_Permanent && dk.block[index].empty_num >= size) {
+        if(dk.block[index].Is_Permanent && dk.block[index].empty_num >= size && dk.block[index].tag == tag) {
             return index;
         }
     }
@@ -139,9 +139,16 @@ vector<info> get_existed_block(int tag, const vector<bool>& is_occupied, int siz
 
 info get_empty_block(int tag, int size, const vector<bool>& is_occupied) {
 
-    //  1. 优先选择最优的空闲块，即标签是连续的.
+    std::vector<std::array<int, 2>>U;
     for(int i = 1;i <= N;i++) {
-        if(is_occupied[i]) continue;
+        if(is_occupied[i] == false) {
+            U.push_back({disk[i].empty_num, i});
+        }
+    }
+    std::sort(U.rbegin(), U.rend());
+
+    //  1. 优先选择最优的空闲块，即标签是连续的.
+    for(auto [_, i] : U) {
         auto& dk = disk[i];
         if(dk.tag_block_number[tag] < 4) {
             int ls = 0, last_tag = 0;
@@ -161,8 +168,7 @@ info get_empty_block(int tag, int size, const vector<bool>& is_occupied) {
     }
 
     //  2. 假如存在连续空块 bl1, bl2 那么优先选择 bl2.
-    for(int i = 1;i <= N;i++) {
-        if(is_occupied[i]) continue ;
+    for(auto [_, i] : U) {
         auto& dk = disk[i];
         if(dk.tag_block_number[tag] >= 4) continue ;
         std::vector<std::array<int, 2>>Seg;
@@ -185,8 +191,7 @@ info get_empty_block(int tag, int size, const vector<bool>& is_occupied) {
     }
 
     //  3. 不管了， 随便选一个空块
-    for(int i = 1;i <= N;i++) {
-        if(is_occupied[i]) continue ;
+    for(auto [_, i] : U) {
         auto& dk = disk[i];
         int ls = 0;
         for(auto [l, r, index] : dk.infos) {
@@ -202,4 +207,33 @@ info get_empty_block(int tag, int size, const vector<bool>& is_occupied) {
     }
 
     return {0, 0, 0};
+}
+
+/*
+    写入标签tag，要求所选区域的空余块尽可能少.
+*/
+
+info WriteIn_Other_Block(int tag, int size, const vector<bool>& is_occupied) {
+    
+    int cur_empty_num = V, disk_id = 0, index = 0;
+    for(int i = 1;i <= N;i++) {
+        if(is_occupied[i] == false) {
+            for(auto [L, R, Index] : disk[i].infos) {
+                auto& bl = disk[i].block[Index];
+                if(bl.tag == tag && bl.empty_num >= size) {
+                    if(bl.empty_num < cur_empty_num) {
+                        cur_empty_num = bl.empty_num;
+                        disk_id = i;
+                        index = Index;
+                    }
+                }
+            }
+        }
+    }
+
+    if(cur_empty_num == V) {
+        return info {0, 0, 0};
+    }
+
+    return info {cur_empty_num, disk_id, index};
 }

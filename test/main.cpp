@@ -122,14 +122,6 @@ void write_action()
             int L = l, R = std::min(V, l + small_block_size - 1);
             //  分配标签块
             auto flag = disk[disk_id].allocate_block(L, R, tag);
-
-            if(flag == false) {
-                file<<"cl cr disk "<<L<<" "<<R<<" "<<disk_id<<endl;
-                for(auto [l, r, _] : disk[disk_id].infos) {
-                    file<<l<<" "<<r<<endl;
-                }
-                file.close();
-            }
             assert(flag == true);
 
             auto [block_pos, tar] = get_continuos_unit(disk_id, L, R, size);
@@ -142,7 +134,42 @@ void write_action()
 
         if(xth > 3) continue;
 
-        //  4.没办法了，调参吧.
+        //  4. 写入相似度较高的变量中
+        std::vector<std::tuple<double, int>> SimilarTag;
+        
+        for(int k = 1;k <= M;k++) {
+            if(k != tag) {
+                auto sim = Get_Similar_Level(k, tag, current_time());
+                SimilarTag.push_back({sim, k});
+            }
+        }
+
+        std::sort(SimilarTag.begin(), SimilarTag.end());
+
+        while(xth <= 3 && !SimilarTag.empty()) {
+            
+            auto [_, match_tag] = SimilarTag.back();
+            auto [empty_num, disk_id, index] = WriteIn_Other_Block(match_tag, size, is_occupied);
+            
+            if(empty_num == 0) {
+                SimilarTag.pop_back();
+                continue ;
+            }
+
+            auto& bl = disk[disk_id].block[index];
+            auto [block_pos, tar] = get_continuos_unit(disk_id, bl.first_point, bl.first_point + bl.size - 1, size);
+            do_write(id, size, xth, disk_id, block_pos);
+            is_occupied[disk_id] = 1;
+            printf("\n");
+            xth += 1;
+            writeIn_Position(disk_id, block_pos);
+        } 
+
+        //  5. 没办法了，调参吧
+        if(xth <= 3) {
+            file<<"current_time "<<current_time()<<endl;
+            file.close();
+        }
         assert(xth > 3);
     }
     
@@ -328,12 +355,12 @@ void update_block_action() {
             auto& bl = dk.block[index];
             const int res = (r - l + 1) - bl.empty_num;
             if(res <= delete_threshold && tag_unit_number[bl.tag] - bl.size >= WriteIn[bl.tag][xth + 1] && !bl.Is_Permanent) {
+                file<<"current_time "<<current_time()<<endl;
+                file<<"l r tag res "<<l<<" "<<r<<" "<<dk.block[index].tag<<" "<<res<<endl;
                 dk.delete_block(index);
             } 
         }
     }
-
-    file<<"update_block_action part1"<<endl;
 }
 
 int main()
