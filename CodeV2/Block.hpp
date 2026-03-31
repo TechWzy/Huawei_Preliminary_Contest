@@ -2,8 +2,6 @@
 #pragma GCC optimize("O2")
 #include "utils.hpp"
 
-
-
 class Block {
 public:
 	int object_tag = 0; 
